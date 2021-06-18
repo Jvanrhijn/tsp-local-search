@@ -1,8 +1,6 @@
 from collections import defaultdict
 import heapq
 
-from graph.graph import Graph
-
 
 def convert_graph(graph):
     vertices = graph.vertices

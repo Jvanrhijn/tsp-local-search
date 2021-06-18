@@ -1,10 +1,6 @@
 import numpy as np
-import math
 import matplotlib.pyplot as plt
-from itertools import product, groupby
-import random
-import copy
-import networkx as nx
+from itertools import groupby
 
 
 def invert_path(path):
@@ -66,28 +62,6 @@ def nearest_neighbor(tour):
         new_tour.append(tour[nn+1])
         node = new_tour[-1]
     return new_tour
-
-
-def draw_tour(vertices, edges, tour, weights):
-
-    graph = nx.Graph()
-    
-    for e in edges:
-        graph.add_edge(*e, weight=weights[e])
-    
-    pos = nx.spring_layout(graph, seed=7)
-    nx.draw_networkx_nodes(graph, pos, node_size=300, node_color="red")
-
-    # draw edges in tour
-    #nx.draw_networkx_edges(graph, pos, edgelist=edges, edge_color="black")
-    nx.draw_networkx_edges(graph, pos, edgelist=tour, edge_color="red")
-
-    nx.draw_networkx_labels(graph, pos, font_size=10)
-    ax = plt.gca()
-    ax.margins(0.08)
-    plt.axis("off")
-    plt.tight_layout()
-    plt.show()
 
 
 def head(e0, e1):
