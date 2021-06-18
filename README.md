@@ -23,3 +23,12 @@ This is a variant of 3-opt wherein the sets of edges added and removed are disjo
 
 #### Lin-Kernighan
 This implements the variant of Lin-Kernighan specified [here](https://arxiv.org/abs/1003.5330). It is almost equivalent to the variant shown to be PLS complete by Papadimitriou, but written in a form easier to implement. Additionally, it is possible to specify the `greedy` option to `True`, which has the algorithm choose the first improving edge in the path optimization routine rather than the best improving edge.
+
+## Examples
+Two example files are provided under `examples`.  Running them, e.g.:
+
+~~~
+$ python -m examples.compare_kn57
+~~~
+
+Additionally, some instances from TSPLIB are provided under `instances` in the form of distance matrices. The `Graph` class is capable of loading these into a weighted complete graph via the `from_tspfile` class method.
