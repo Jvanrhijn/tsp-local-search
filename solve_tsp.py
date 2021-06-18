@@ -1,21 +1,10 @@
-import time
-from timeit import default_timer as timer
-import scipy.optimize as scopt
 import numpy as np
-import math
-import matplotlib.pyplot as plt
-from itertools import product, groupby
-import random
 import copy
-import networkx as nx
 
-from lk import lk_iteration
-from two_opt import two_opt_iteration, three_opt_iteration
-#from three_opt import three_opt
-from util import *
-from greedy_tsp import greedy as greedy_tsp
-from graph import Graph
-from prim import *
+from util.util import *
+from heuristics.greedy_tsp import greedy as greedy_tsp
+from graph.graph import Graph
+from util.prim import *
 
 
 # prefer concorde

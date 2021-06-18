@@ -1,7 +1,7 @@
 from collections import defaultdict
 import heapq
 
-from graph import Graph
+from graph.graph import Graph
 
 
 def convert_graph(graph):
