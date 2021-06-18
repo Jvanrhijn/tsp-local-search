@@ -117,3 +117,30 @@ def ordered_tour(tour):
     otour.append(temp_otour[-1] if temp_otour[-1][0] == temp_otour[-2][1] else tuple(reversed(temp_otour[-1])))
 
     return otour
+
+
+def edge_difference(tour, new_tour):
+    # find edges cut during iteration
+    cut = [edge for edge in tour if edge not in new_tour]
+    joined = [edge for edge in new_tour if edge not in tour]
+
+    assert len(cut) == len(joined)
+
+    return cut, joined
+
+
+def flatten_tour(tour):
+    # flatten vertex list
+    flat = [next(iter(tour[-1].intersection(tour[0])))]
+    for i, e in enumerate(tour[1:]):
+        f = tour[i]
+        link = e.intersection(f)
+        flat.append(next(iter(link)))
+
+    flat.append(flat[0])
+    return flat
+
+
+def unflatten_tour(tour):
+    return list(map(frozenset, zip(tour, tour[1:] + [tour[0]])))
+

@@ -147,11 +147,3 @@ def tsp_solver(graph):
     tour = [graph.vertices[i] for i in perm]
     tour = [frozenset({u, v}) for u, v in zip(tour, tour[1:])] + [frozenset({tour[-1], tour[0]})]
     return tour
-
-def edge_difference(tour1, tour2):
-    cut = [edge for edge in tour1 if edge not in tour2 and tuple(reversed(edge)) not in tour2]
-    joined = [edge for edge in tour2 if edge not in tour1 and tuple(reversed(edge)) not in tour1]
-
-    assert len(cut) == len(joined)
-
-    return len(cut)

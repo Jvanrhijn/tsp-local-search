@@ -10,23 +10,6 @@ def all_segments(n: int):
         for k in range(j + 2, n + (i > 0)))
 
 
-
-def flatten_tour(tour):
-    # flatten vertex list
-    flat = [next(iter(tour[-1].intersection(tour[0])))]
-    for i, e in enumerate(tour[1:]):
-        f = tour[i]
-        link = e.intersection(f)
-        flat.append(next(iter(link)))
-
-    flat.append(flat[0])
-    return flat
-
-
-def unflatten_tour(tour):
-    return list(map(frozenset, zip(tour, tour[1:] + [tour[0]])))
-
-
 def three_opt(p, a, c, e):
     """In the broad sense, 3-opt means choosing any three edges ab, cd
     and ef and chopping them, and then reconnecting (such that the
