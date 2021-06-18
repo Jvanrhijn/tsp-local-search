@@ -1,5 +1,6 @@
 import numpy as np
 from util.util import *
+from heuristics.two_opt import two_opt_iteration
 
 
 def all_segments(n: int):
@@ -31,7 +32,7 @@ def three_opt(p, a, c, e):
     return sols
 
 
-def three_opt_iteration(tour, weights):
+def pure_three_opt_iteration(tour, weights):
     flat_tour = flatten_tour(tour)[:-1]
     og_tour_length = path_length(tour, weights)
 
@@ -48,3 +49,15 @@ def three_opt_iteration(tour, weights):
             return new_tour
 
     return tour
+
+
+def three_opt_iteration(tour, weights):
+    og_tour_length = path_length(tour, weights)
+
+    # try to do 2-opt first
+    two_opt_tour = two_opt_iteration(tour, weights)
+    if path_length(two_opt_tour, weights) < og_tour_length:
+        return two_opt_tour
+
+    # if 2-opt fails to improve, do pure 3-opt
+    return pure_three_opt_iteration(tour, weights)
