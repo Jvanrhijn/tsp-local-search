@@ -33,11 +33,12 @@ def generate_random_tour(nvert, rng_seed=None, kind="Euclidean"):
         # randomly place vertices in the unit square
         positions = {v: gen.uniform(size=2) for v in graph.vertices}
         graph.place_vertices(positions)
+
     elif kind == "Unit":
         graph.weights = {e: gen.uniform(low=0, high=1) for e in graph.edges}
         # symmetrize
-        for u, v in graph.edges:
-            graph.weights[frozenset((u, v))] = graph.weights[frozenset((v, u))]
+        #for u, v in graph.edges:
+        #    graph.weights[frozenset((u, v))] = graph.weights[frozenset((v, u))]
     
     # randomly generate initial tour
     tour = copy.deepcopy(graph.vertices)

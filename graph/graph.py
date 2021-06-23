@@ -45,7 +45,7 @@ class Graph:
 
         if set(positions.keys()) != set(self.vertices):
             raise ValueError("Not all vertices assigned a position")
-        self.weights = {frozenset((a, b)): np.linalg.norm(positions[a] - positions[b]) for (a, b) in self.edges}
+        self.weights = {frozenset({a, b}): np.linalg.norm(positions[a] - positions[b]) for a, b in self.edges}
         self.positions = positions
 
     def remove_vertex(self, vertex):
