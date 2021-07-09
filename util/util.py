@@ -40,7 +40,10 @@ def mark_edge(ax, edge, positions, *args, **kwargs):
 
 
 def path_length(edges, weights):
-    return sum(weights[e] for e in edges)
+    try:
+        return sum(weights[e] for e in edges)
+    except KeyError:
+        return np.inf 
 
 
 def get_positions(tour, positions):
@@ -144,3 +147,11 @@ def flatten_tour(tour):
 def unflatten_tour(tour):
     return list(map(frozenset, zip(tour, tour[1:] + [tour[0]])))
 
+
+def tour_valid(tour, edges):
+    """checks if the given tour only uses edges in the given graph"""
+    for edge in tour:
+        #print(edge)
+        if edge not in edges:
+            return False
+    return True

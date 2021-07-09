@@ -80,14 +80,16 @@ def optimize_path(path, weights, depth, tour_length, kmax=np.inf, restricted=Non
 
 def lk_iteration(tour, weights, kmax=np.inf, greedy=False):
 
+    edges = set(weights.keys())
+
     # hacky: perform LK for both the clockwise
     # and counterclockwise tour
 
     forward = lk_iteration_pre(tour, weights, kmax=kmax, greedy=greedy)
     backward = lk_iteration_pre(invert_path(tour), weights, kmax=kmax, greedy=greedy)
 
-    forward_len = path_length(forward, weights)
-    backward_len = path_length(backward, weights)
+    forward_len = path_length(forward, weights) if tour_valid(forward, edges) else np.inf
+    backward_len = path_length(backward, weights) if tour_valid(backward, edges) else np.inf
 
     return forward if forward_len < backward_len else backward
 

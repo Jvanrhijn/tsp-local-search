@@ -17,7 +17,7 @@ class Graph:
 
     @classmethod
     def fully_connected(cls, vertices, weights=None):
-        edges = list(map(frozenset, filter(lambda e: e[0] != e[1], product(vertices, vertices))))
+        edges = list(set(map(frozenset, filter(lambda e: e[0] != e[1], product(vertices, vertices)))))
         return cls(vertices, edges, weights=weights)
 
     @classmethod

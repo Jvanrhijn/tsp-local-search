@@ -11,6 +11,8 @@ def two_opt_swap(tour, i, k):
 
 def two_opt_iteration(tour, weights):
 
+    edges = set(weights.keys())
+
     length = path_length(tour, weights)
 
     for i in range(len(tour)):
@@ -22,6 +24,9 @@ def two_opt_iteration(tour, weights):
             pnew = break_and_reconnect_path(p, j)
 
             tour_new = close_path(pnew)
+
+            if not tour_valid(tour_new, edges):
+                continue
 
             if path_length(tour_new, weights) < length:
                 return tour_new

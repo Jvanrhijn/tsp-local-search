@@ -47,6 +47,47 @@ def generate_random_tour(nvert, rng_seed=None, kind="Euclidean"):
     return graph, tour
 
 
+def generate_ktree(nvert, k, rng_seed=None, kind="Euclidean"):
+    if k < nvert // 2:
+        raise ValueError("Very small treewidth not implemented yet")
+
+    gen = np.random.RandomState(seed=rng_seed)
+
+    assert k <= nvert + 1
+
+    base_vertices = [f"v{i}" for i in range(k+1)]
+
+    graph = Graph.fully_connected(copy.deepcopy(base_vertices))
+    tour = ["v0"]
+    
+    for j, i in enumerate(range(k+1, nvert)):
+        # add new vertex
+        graph.vertices.append(f"v{i}")
+
+        # add edges to create a k-tree
+        # for each new vertex v, connect it to exactly k vertices S 
+        # from the base graph in such a way that S and {v} together
+        # form a clique.
+        
+        # connect each new vertex to all bas vertices (very simple k-tree)
+        graph.edges += [frozenset({f"v{i}", v}) for v in base_vertices]
+        tour.append(f"v{i}")
+        tour.append(f"v{j}")
+
+    tour.append("v0")
+
+    if kind == "Unit":
+        for edge in graph.edges:
+            graph.set_weight(gen.uniform(low=0, high=1), edge)
+    elif kind == "Euclidean":
+        positions = {v: gen.uniform(size=2) for v in graph.vertices}
+        graph.place_vertices(positions)
+    else:
+        raise ValueError("Weight distribution not supported")
+
+    return graph, tour
+
+
 def solve_tsp(graph, tour, optimizer, it_max=1000): #tour, weights, it_max=1000):
 
     for i in range(it_max):

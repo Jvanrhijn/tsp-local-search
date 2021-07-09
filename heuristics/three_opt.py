@@ -33,18 +33,20 @@ def three_opt(p, a, c, e):
 
 
 def pure_three_opt_iteration(tour, weights):
+    edges = set(weights.keys())
+
     flat_tour = flatten_tour(tour)[:-1]
     og_tour_length = path_length(tour, weights)
 
     for (i, j, k) in all_segments(len(tour)):
-        tours = list(map(unflatten_tour, three_opt(flat_tour, i, j, k)))
+        tours = list(filter(lambda t: tour_valid(t, edges), map(unflatten_tour, three_opt(flat_tour, i, j, k))))
 
         lengths = np.array(list(map(lambda p: path_length(p, weights), tours)))
 
         shortest = lengths.argmin()
 
         new_tour = tours[shortest]
-        
+
         if path_length(new_tour, weights) < og_tour_length:
             return new_tour
 
