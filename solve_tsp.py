@@ -48,33 +48,49 @@ def generate_random_tour(nvert, rng_seed=None, kind="Euclidean"):
 
 
 def generate_ktree(nvert, k, rng_seed=None, kind="Euclidean"):
-    if k < nvert // 2:
-        raise ValueError("Very small treewidth not implemented yet")
-
     gen = np.random.RandomState(seed=rng_seed)
 
     assert k <= nvert + 1
 
     base_vertices = [f"v{i}" for i in range(k+1)]
+    # identify the subset of vertices to which all added
+    # vertices will be neighbors
+    subset = base_vertices[:k-2]
 
     graph = Graph.fully_connected(copy.deepcopy(base_vertices))
-    tour = ["v0"]
     
-    for j, i in enumerate(range(k+1, nvert)):
+    for i in range(k+1, nvert):
         # add new vertex
         graph.vertices.append(f"v{i}")
 
         # add edges to create a k-tree
-        # for each new vertex v, connect it to exactly k vertices S 
+        # for each new vertex v, connect it to exactly k-2 vertices S 
         # from the base graph in such a way that S and {v} together
         # form a clique.
-        
-        # connect each new vertex to all bas vertices (very simple k-tree)
-        graph.edges += [frozenset({f"v{i}", v}) for v in base_vertices]
-        tour.append(f"v{i}")
-        tour.append(f"v{j}")
 
-    tour.append("v0")
+        # connect each new vertex to exactly k-2 of the base vertices
+        graph.edges += [frozenset({f"v{i}", v}) for v in subset]
+
+    # finally, connect all added vertices in a cycle
+    added_vs = [f"v{i}" for i in range(k+1, nvert)]
+    cycle = copy.deepcopy(added_vs)
+
+    graph.edges += [frozenset({u, v}) for u, v in zip(cycle, cycle[1:])] + [frozenset({cycle[-1], cycle[0]})]
+    
+    # a hamiltonian cycle is given by the outer cycle excepting one edge, plus an edge to v0, plus a hamiltonian
+    # path through the original graph ending at any vertex of the neighbor subset
+    tour = cycle
+
+    start = subset[0]
+    end = subset[1]
+
+    tour.append(start)
+    remaining = subset[2:]
+    tour += remaining
+    tour += base_vertices[k-2:]
+    tour.append(end)
+
+    tour = [frozenset({u, v}) for u, v in zip(tour, tour[1:])] + [frozenset({tour[-1], tour[0]})]
 
     if kind == "Unit":
         for edge in graph.edges:
@@ -102,7 +118,7 @@ def solve_tsp(graph, tour, optimizer, it_max=1000): #tour, weights, it_max=1000)
     return new_tour, i + 1
 
 
-def solve_ensemble(optimizer, num_tours, nvert, seeds=None, greedy=False, compute_lb=True, kind="Euclidean"):
+def solve_ensemble(optimizer, num_tours, nvert, seeds=None, greedy=False, compute_lb=True, kind="Euclidean", tour_generator=generate_random_tour):
 
     if not seeds:
         seeds = [None]*num_tours
@@ -113,7 +129,7 @@ def solve_ensemble(optimizer, num_tours, nvert, seeds=None, greedy=False, comput
     lower_bounds = np.zeros(num_tours)
 
     for i in range(num_tours):
-        graph, tour = generate_random_tour(nvert, rng_seed=seeds[i], kind=kind)
+        graph, tour = tour_generator(nvert, rng_seed=seeds[i], kind=kind)
         
         if compute_lb:
             if CONCORDE_AVAILABLE:
@@ -139,13 +155,13 @@ def solve_ensemble(optimizer, num_tours, nvert, seeds=None, greedy=False, comput
     return len_original, len_optimal, dts, lower_bounds
 
 
-def average_case_time(num_tours, nverts, optimizer, greedy=False, kind="Euclidean"):
+def average_case_time(num_tours, nverts, optimizer, greedy=False, kind="Euclidean", tour_generator=generate_random_tour):
     dts = np.zeros(nverts.shape)
 
     for i, nv in enumerate(nverts):
         seeds = list(range(i*num_tours, (i+1)*num_tours))
         len_orig, len_optimal, dt, lower_bounds \
-            = solve_ensemble(optimizer, num_tours, nv, seeds=seeds, greedy=greedy, compute_lb=False, kind=kind)
+            = solve_ensemble(optimizer, num_tours, nv, seeds=seeds, greedy=greedy, compute_lb=False, kind=kind, tour_generator=tour_generator)
         dts[i] = np.mean(dt)
 
     return dts
