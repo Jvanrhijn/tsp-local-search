@@ -1,6 +1,7 @@
 from os import read
 import numpy as np
 from itertools import product, groupby
+from graph.tsplib_coordinates_to_matrix import string_starts_with_number, read_distance_matrix
 
 
 class Graph:
@@ -62,12 +63,34 @@ class Graph:
         g.place_vertices(positions)
         return g
 
+    def vertex_induced_subgraph(self, x):
+        # return subgraph of self with vertex set x
+        edges = []
+        for e in self.edges:
+            u, v = e
+            if u in x and v in x:
+                edges.append(e)
+        weights = {e: self.weights[e] for e in edges}
+        g = Graph(x, edges, weights=weights)
+
+        if self.positions is not None:
+            g.positions = {v: self.positions[v] for v in x}
+        
+        return g
+        
+
 def read_instance(path):
     distances = []
 
     with open(path, "r") as file:
-        for line in file:
-            split = line.split()
-            distances.append(list(map(int, split)))
+        lines = file.readlines()
+
+        if not string_starts_with_number(lines[0]):
+            return read_distance_matrix(path)
+
+        else:
+            for line in lines:
+                split = line.split()
+                distances.append(list(map(float, split)))
     
-    return np.array(distances)
+            return np.array(distances)

@@ -2,14 +2,15 @@ from util.util import *
 
 
 def two_opt_swap(tour, i, k):
-    assert k > i
+    if k < i:
+        k, i = i, k
 
     p = remove_edge_from_tour(tour, i)
     pnew = break_and_reconnect_path(p, k)
     return close_path(pnew)
 
 
-def two_opt_iteration(tour, weights):
+def two_opt_iteration_general(tour, weights, comp=lambda x, y: x < y):
 
     edges = set(weights.keys())
 
@@ -28,7 +29,16 @@ def two_opt_iteration(tour, weights):
             if not tour_valid(tour_new, edges):
                 continue
 
-            if path_length(tour_new, weights) < length:
+            #if path_length(tour_new, weights) < length:
+            if comp(path_length(tour_new, weights), length):
                 return tour_new
 
     return tour
+
+
+def two_opt_iteration(tour, weights):
+    return two_opt_iteration_general(tour, weights)
+
+
+def two_opt_iteration_reverse(tour, weights):
+    return two_opt_iteration_general(tour, weights, comp=lambda x, y: x >= y)
