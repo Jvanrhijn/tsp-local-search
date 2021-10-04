@@ -38,13 +38,14 @@ initial_tour = copy.deepcopy(tour)
 lb = 0
 
 # number of steps
-nsteps = 80000
+nsteps = 8000
 
 
 a = 1
 #temperature = lambda t: a / (np.log(t + 2))**np.log(np.log((t + 2)))
 #temperature = lambda t: a / (t + 2)
-temperature = lambda t: a / np.log(t + 2)
+#temperature = lambda t: a / np.log(t + 2)
+temperature = lambda t: a
 
 
 def run_sa(steps, tour):
@@ -135,12 +136,13 @@ downhill_mean = np.mean(downhills, axis=0)
 tup = np.arange(1, len(uphill_mean)+1)
 td = np.arange(1, len(downhill_mean)+1)
 
-uph_bound = integ.cumtrapz(temperature(tup), x=tup, initial=0)
+#uph_bound = integ.cumtrapz(temperature(tup), x=tup, initial=0)
 
 plt.figure()
 plt.title("uphill")
 plt.plot(tup, uphill_mean, label="Expected uphill gain")
 plt.plot(tup, 1.1*tup / np.log(tup+2), label=r"$\Theta(t/\log(t))$")
+plt.plot(tup, a * tup, label=r"$\Theta(t)$")
 #plt.plot(tup, uph_bound)
 plt.xlabel("t"); plt.ylabel("Gain")
 plt.legend()

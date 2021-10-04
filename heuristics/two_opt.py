@@ -1,4 +1,5 @@
 from util.util import *
+from util.util import remove_edge_from_tour
 
 
 def two_opt_swap(tour, i, k):
@@ -7,6 +8,7 @@ def two_opt_swap(tour, i, k):
 
     p = remove_edge_from_tour(tour, i)
     pnew = break_and_reconnect_path(p, k)
+
     return close_path(pnew)
 
 

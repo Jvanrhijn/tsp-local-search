@@ -25,7 +25,7 @@ if CONCORDE_AVAILABLE == False:
 
 def generate_random_tour(nvert, rng_seed=None, kind="Euclidean"):
     # set up tour
-    gen = np.random.RandomState(seed=rng_seed)
+    gen = np.random.default_rng(seed=rng_seed)
 
     graph = Graph.fully_connected([f"v{i}" for i in range(nvert)])
     

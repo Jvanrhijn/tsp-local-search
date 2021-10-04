@@ -155,3 +155,4 @@ def tour_valid(tour, edges):
         if edge not in edges:
             return False
     return True
+
