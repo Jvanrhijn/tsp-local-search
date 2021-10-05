@@ -25,7 +25,7 @@ np.random.seed(43532)
 local_maxima_encountered = 0
 local_minima_encountered = 0
 
-nvert = 50
+nvert = 400
 #graph, tour = generate_random_tour(nvert, rng_seed=22, kind="Euclidean")
 graph, tour = generate_random_tour(nvert, rng_seed=435, kind="Unit")
 #graph = Graph.from_tspfile("instances/a280.tsp")
@@ -38,18 +38,19 @@ initial_tour = copy.deepcopy(tour)
 lb = 0
 
 # number of steps
-nsteps = 8000
+nsteps = 1000
 
 
 a = 1
 #temperature = lambda t: a / (np.log(t + 2))**np.log(np.log((t + 2)))
 #temperature = lambda t: a / (t + 2)
-#temperature = lambda t: a / np.log(t + 2)
-temperature = lambda t: a
+temperature = lambda t: a / np.log(t + 2)
+#temperature = lambda t: a
 
 
 def run_sa(steps, tour):
 
+    lens = []
     gain_uphill = []
     gain_downhill = []
     nup = [0]
@@ -80,6 +81,7 @@ def run_sa(steps, tour):
 
 
         best_so_far = min(best_so_far, length)
+        lens.append(length)
 
         #is_2_optimal = abs(path_length(two_opt_iteration(new_tour, graph.weights), graph.weights) - path_length(tour, graph.weights)) < 1e-10
 
@@ -88,21 +90,28 @@ def run_sa(steps, tour):
         #if is_2_optimal:
         #    break
 
-    return nup, ndown, gain_uphill, gain_downhill
+    return nup, ndown, gain_uphill, gain_downhill, lens
 
 
 uphills = []
 downhills = []
 nups = []
 ndowns = []
+lenss = []
 
+nsamples = 1
 # run a couple of times with random tours
-for _ in tqdm.tqdm(range(10)):
+for i in tqdm.tqdm(range(nsamples)):
+    #vs = np.random.permutation(graph.vertices)
+    #nvert = len(vs)
+    #tour = [frozenset({u, v}) for u, v in zip(vs, vs[1:])] + [frozenset({vs[-1], vs[0]})]
+    graph, tour = generate_random_tour(nvert, rng_seed=i, kind="Unit")
     vs = np.random.permutation(graph.vertices)
     nvert = len(vs)
     tour = [frozenset({u, v}) for u, v in zip(vs, vs[1:])] + [frozenset({vs[-1], vs[0]})]
+    initial_tour = copy.deepcopy(tour)
 
-    nup, ndown, gain_uphill, gain_downhill = run_sa(nsteps, tour)
+    nup, ndown, gain_uphill, gain_downhill, lens = run_sa(nsteps, tour)
 
     tup = np.arange(1, len(gain_uphill)+1)
     guph = np.array([sum(gain_uphill[:i]) for i in tup])
@@ -115,6 +124,8 @@ for _ in tqdm.tqdm(range(10)):
     
     nups.append(nup)
     ndowns.append(ndown)
+
+    lenss.append(lens)
 
 nuphill = min([len(u) for u in uphills])
 uphills = np.array([u[:nuphill] for u in uphills])
@@ -132,41 +143,53 @@ downhills = np.array([u[:ndhill] for u in downhills])
 
 downhill_mean = np.mean(downhills, axis=0)
 
+lenss_mean = np.mean(np.array(lenss), axis=0)
+
 
 tup = np.arange(1, len(uphill_mean)+1)
 td = np.arange(1, len(downhill_mean)+1)
 
 #uph_bound = integ.cumtrapz(temperature(tup), x=tup, initial=0)
 
+ts = np.arange(1, len(lenss_mean)+1)
 plt.figure()
-plt.title("uphill")
-plt.plot(tup, uphill_mean, label="Expected uphill gain")
-plt.plot(tup, 1.1*tup / np.log(tup+2), label=r"$\Theta(t/\log(t))$")
-plt.plot(tup, a * tup, label=r"$\Theta(t)$")
-#plt.plot(tup, uph_bound)
-plt.xlabel("t"); plt.ylabel("Gain")
-plt.legend()
-
-plt.figure()
-plt.title("downhill")
-plt.plot(td, downhill_mean)
-plt.plot(td, td / np.log(td+2))
-#plt.plot(tdown, tdown / np.log(tdown))
-
-ts = np.arange(1, nsteps + 2)
-
-xs = np.arange(1, 10*nsteps +2)
-
-plt.figure()
-#plt.plot(ts, nups / ts**0.8)
-
-exp = (np.log(nups[-1] - np.log(nups[3*len(nups)//4])) / (np.log(ts[-1] - np.log(ts[3*len(ts)//4]))))
-
-plt.plot(ts, nups, label=r"$T_+$")
-plt.plot(ts, ts**(exp + 0.01), label=f"$\Theta$(t^{exp + 0.01:.3f})")
-#plt.loglog(xs, xs / np.log(xs+2)**3)
-#plt.plot(ts, 5*np.sqrt(ts))
+plt.plot(ts, lenss_mean, label="Mean tour length")
+plt.plot(ts, nvert * (a / np.log(ts+2) - 1 / ((ts+2)**(1/a) - 1)), label=r"$\Theta(an/\log(t))$")
 plt.xlabel("t")
+plt.ylabel("Tour length")
+plt.title(f"Samples = {nsamples}")
 plt.legend()
-
 plt.show()
+
+#plt.figure()
+#plt.title("uphill")
+#plt.plot(tup, uphill_mean, label="Expected uphill gain")
+#plt.plot(tup, 1.1*tup / np.log(tup+2), label=r"$\Theta(t/\log(t))$")
+#plt.plot(tup, a * tup, label=r"$\Theta(t)$")
+##plt.plot(tup, uph_bound)
+#plt.xlabel("t"); plt.ylabel("Gain")
+#plt.legend()
+#
+#plt.figure()
+#plt.title("downhill")
+#plt.plot(td, downhill_mean)
+#plt.plot(td, td / np.log(td+2))
+##plt.plot(tdown, tdown / np.log(tdown))
+#
+#ts = np.arange(1, nsteps + 2)
+#
+#xs = np.arange(1, 10*nsteps +2)
+#
+#plt.figure()
+##plt.plot(ts, nups / ts**0.8)
+#
+#exp = (np.log(nups[-1] - np.log(nups[3*len(nups)//4])) / (np.log(ts[-1] - np.log(ts[3*len(ts)//4]))))
+#
+#plt.plot(ts, nups, label=r"$T_+$")
+#plt.plot(ts, ts**(exp + 0.01), label=f"$\Theta$(t^{exp + 0.01:.3f})")
+##plt.loglog(xs, xs / np.log(xs+2)**3)
+##plt.plot(ts, 5*np.sqrt(ts))
+#plt.xlabel("t")
+#plt.legend()
+#
+#plt.show()
