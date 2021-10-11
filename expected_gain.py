@@ -25,7 +25,7 @@ np.random.seed(43532)
 local_maxima_encountered = 0
 local_minima_encountered = 0
 
-nvert = 400
+nvert = 100
 #graph, tour = generate_random_tour(nvert, rng_seed=22, kind="Euclidean")
 graph, tour = generate_random_tour(nvert, rng_seed=435, kind="Unit")
 #graph = Graph.from_tspfile("instances/a280.tsp")
@@ -42,9 +42,10 @@ nsteps = 1000
 
 
 a = 1
+temperature = lambda t: a / np.log(t + 2) * np.abs(np.sin(t))
 #temperature = lambda t: a / (np.log(t + 2))**np.log(np.log((t + 2)))
 #temperature = lambda t: a / (t + 2)
-temperature = lambda t: a / np.log(t + 2)
+#temperature = lambda t: a / np.log(t + 2)
 #temperature = lambda t: a
 
 
@@ -99,7 +100,7 @@ nups = []
 ndowns = []
 lenss = []
 
-nsamples = 1
+nsamples = 10
 # run a couple of times with random tours
 for i in tqdm.tqdm(range(nsamples)):
     #vs = np.random.permutation(graph.vertices)
@@ -144,6 +145,7 @@ downhills = np.array([u[:ndhill] for u in downhills])
 downhill_mean = np.mean(downhills, axis=0)
 
 lenss_mean = np.mean(np.array(lenss), axis=0)
+lenss_var = np.var(np.array(lenss), axis=0)
 
 
 tup = np.arange(1, len(uphill_mean)+1)
@@ -151,14 +153,27 @@ td = np.arange(1, len(downhill_mean)+1)
 
 #uph_bound = integ.cumtrapz(temperature(tup), x=tup, initial=0)
 
+
 ts = np.arange(1, len(lenss_mean)+1)
+temps = temperature(ts)
+
 plt.figure()
 plt.plot(ts, lenss_mean, label="Mean tour length")
-plt.plot(ts, nvert * (a / np.log(ts+2) - 1 / ((ts+2)**(1/a) - 1)), label=r"$\Theta(an/\log(t))$")
+plt.plot(ts, nvert * (temps - 1 / (np.exp(1/temps) - 1)), label=r"$\Theta(an/\log(t))$")
 plt.xlabel("t")
 plt.ylabel("Tour length")
 plt.title(f"Samples = {nsamples}")
 plt.legend()
+
+plt.figure()
+plt.plot(ts, lenss_var, label="Tour variance")
+#plt.plot(temps, nvert * (a / np.log(ts+2) - 1 / ((ts+2)**(1/a) - 1)), label=r"$\Theta(an/\log(t))$")
+plt.plot(ts, nvert * (temps**2 - 1 / (np.exp(1/temps) - 1) - 1 / (np.exp(1/temps) - 1)**2))
+plt.xlabel("t")
+plt.ylabel("Tour variance")
+plt.title(f"Samples = {nsamples}")
+plt.legend()
+
 plt.show()
 
 #plt.figure()

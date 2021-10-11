@@ -17,7 +17,7 @@ def tour_length(tour, weights):
 n = 6
 nsamples = 400
 zav_log = 0
-betas, dbeta = np.linspace(0.1, n, 100, retstep=True)
+betas, dbeta = np.linspace(0.01, n, 100, retstep=True)
 zmean = 0.5 * factorial(n-1) * ((1 - np.exp(-betas)) / betas)**n
 
 for it in tqdm.tqdm(range(nsamples)):
@@ -50,9 +50,8 @@ plt.legend()
 
 plt.figure()
 plt.plot(betas[:-2], zav_logderiv2, linestyle="-", label=r"$d_\beta^2 \mathbb{E} (\ln Z)$")
-plt.plot(betas[:-2], zav_log_ub_deriv2, linestyle="-", label=r"$d_\beta^2 (\ln \mathbb{E}(Z))$")
-plt.plot(betas[:-2], 2*n/betas[:-2], linestyle="-", label=r"$d_\beta^2 (\ln \mathbb{E}(Z))$")
-plt.xlabel(r"$\beta$")
+plt.plot(betas, n* (1/betas**2 - 1 / (np.exp(betas) - 1) - 1 / (np.exp(betas) - 1)**2), linestyle="-", label=r"$d_\beta^2 (\ln \mathbb{E}(Z))$")
+plt.xlabel(r"$T$")
 plt.legend()
 plt.show()
 plt.show()
