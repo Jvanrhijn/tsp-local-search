@@ -80,5 +80,9 @@ def transition(initial, graph, temperature, pick_neighbor=pick_neighbor_2opt, tr
         return initial
 
 
-def sa_iteration(initial, graph, temperature, pick_neighbor=pick_neighbor_2opt, transition_function=boltzmann):
+def sa_iteration(initial, graph, temperature, pick_neighbor=pick_neighbor_2opt, transition_function=boltzmann, lazy=False):
+    # lazy Markov chain: only move 50% of the time
+    if lazy:
+        if np.random.rand() >= 0.5:
+            return initial
     return transition(initial, graph, temperature, pick_neighbor=pick_neighbor, transition_function=transition_function)

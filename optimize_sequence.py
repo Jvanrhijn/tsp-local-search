@@ -2,6 +2,7 @@ import math
 from itertools import chain, product, combinations
 from functools import reduce
 import copy
+from os import path
 from matplotlib.pyplot import get
 
 from numpy import add
@@ -26,6 +27,7 @@ local_minima_encountered = 0
 nvert = 50
 #graph, tour = generate_random_tour(nvert, rng_seed=22, kind="Euclidean")
 graph, tour = generate_random_tour(nvert, rng_seed=8, kind="Euclidean")
+start_tour = copy.deepcopy(tour)
 #graph = Graph.from_tspfile("instances/a280.tsp")
 
 vs = np.random.permutation(graph.vertices)
@@ -36,7 +38,7 @@ initial_tour = copy.deepcopy(tour)
 lb = 0
 
 # number of steps
-nsteps = 40000
+nsteps = 1000
 
 ks = []
 
@@ -53,16 +55,16 @@ steps = []
 a = 1
 
 best_so_far = np.inf
+halfway_tour = None
+
+temperature = lambda t: a / np.log(t + 2)
+#temperature = lambda t: a / (t + 1)
 
 for step in range(nsteps):
 
-    #temperature = a / (step + 1)
-    #temperature = a / (np.log(step + 2))
-    temperature = a / (np.log(step + 2)**np.log(np.log(step+2)))
-    #temperature = a
 
     #new_tour = lk_iteration(tour, graph.weights, kmax=np.inf, greedy=True)
-    new_tour = sa_iteration(tour, graph, temperature)
+    new_tour = sa_iteration(tour, graph, temperature(step), pick_neighbor=pick_neighbor_3opt)
     #new_tour = lk_iteration(tour, graph.weights)
     #new_tour = two_opt_iteration(tour, graph.weights)
     #new_tour = two_opt_iteration_reverse(tour, graph.weights)
@@ -72,6 +74,9 @@ for step in range(nsteps):
     # find edges cut during iteration
     cut, joined = edge_difference(tour, new_tour)
     k = len(cut)
+
+    if step == nsteps // 10:
+        halfway_tour = new_tour
 
     xsys.append((cut, joined))
     steps.append(f"{cut}, {joined}")
@@ -89,44 +94,42 @@ for step in range(nsteps):
 
     best_so_far = min(best_so_far, length)
 
-    is_2_optimal = abs(path_length(two_opt_iteration(new_tour, graph.weights), graph.weights) - path_length(tour, graph.weights)) < 1e-5
+    is_2_optimal = abs(path_length(two_opt_iteration(new_tour, graph.weights), graph.weights) - path_length(tour, graph.weights)) < 1e-10
     is_2_maximal = abs(path_length(two_opt_iteration_reverse(new_tour, graph.weights), graph.weights) - path_length(tour, graph.weights)) < 1e-5
 
     local_maxima_encountered += int(is_2_maximal)
     local_minima_encountered += int(is_2_optimal)
 
-    print(f"k = {k} | gain: {gain:.5f} | total gain: {total_gain:.5f} | length: {length:.5f} | best: {best_so_far:.5f} | 2-opt enc: {local_minima_encountered} | temperature: {temperature:.5f} | ave uph g: {np.mean(gain_uphill):.5f} | ave downh g: {np.mean(gain_downhill):.5f}")
+    print(f"k = {k} | gain: {gain:.5f} | total gain: {total_gain:.5f} | length: {length:.5f} | best: {best_so_far:.5f} | 2-opt enc: {local_minima_encountered} | temperature: {temperature(step):.5f} | ave uph g: {np.mean(gain_uphill):.5f} | ave downh g: {np.mean(gain_downhill):.5f}")
 
     
     lengths.append(path_length(new_tour, graph.weights))
 
-    #if k == 0:
-    #    break
 
     old_tour = tour
     tour = new_tour
-
-    if is_2_optimal:
-        break
 
 
 tup = np.arange(1, len(gain_uphill)+1)
 guph = np.array([sum(gain_uphill[:i]) for i in tup])
 
-plt.figure()
-plt.title("uphill")
-plt.plot(tup, guph)
-#plt.plot(tup, a * tup / np.log(tup))
-plt.plot(tup, a * tup / np.log(tup))
-#plt.plot(tup, a * np.log(tup))
+fig, ax = plt.subplots(1, ncols=3)
 
-tdown = np.arange(len(gain_downhill))
-gdown = np.array([sum(gain_downhill[:i]) for i in tdown])
 
-plt.figure()
-plt.title("downhill")
-plt.plot(tdown, gdown)
-plt.plot(tdown, tdown / np.log(tdown))
+ax[0].set_title(f"$T = \infty$, $J(x) = {path_length(start_tour, graph.weights):.2f}$")
+plot_tour(ax[0], start_tour, graph)
+ax[0].xaxis
 
+#ax[1].set_title(f"$T = {temperature(nsteps//10):.4f}$, $J(x) = {path_length(halfway_tour, graph.weights):.2f}$")
+#plot_tour(ax[1], halfway_tour, graph)
+
+ax[2].set_title(f"$T = {temperature(nsteps):.4f}$, $J(x) = {path_length(tour, graph.weights):.2f}$")
+plot_tour(ax[2], tour, graph)
+
+for a in ax:
+    a.xaxis.set_ticks([])
+    a.yaxis.set_ticks([])
+
+plt.tight_layout()
 
 plt.show()

@@ -1,4 +1,5 @@
 import math
+from scipy.stats import kstat
 from itertools import chain, product, combinations
 from functools import reduce
 import copy
@@ -25,7 +26,7 @@ np.random.seed(43532)
 local_maxima_encountered = 0
 local_minima_encountered = 0
 
-nvert = 100
+nvert = 10
 #graph, tour = generate_random_tour(nvert, rng_seed=22, kind="Euclidean")
 graph, tour = generate_random_tour(nvert, rng_seed=435, kind="Unit")
 #graph = Graph.from_tspfile("instances/a280.tsp")
@@ -38,14 +39,16 @@ initial_tour = copy.deepcopy(tour)
 lb = 0
 
 # number of steps
-nsteps = 1000
+nsteps = 10000
+
+# number of steps to stay at the same temperature
+neq = 1
 
 
 a = 1
-temperature = lambda t: a / np.log(t + 2) * np.abs(np.sin(t))
 #temperature = lambda t: a / (np.log(t + 2))**np.log(np.log((t + 2)))
 #temperature = lambda t: a / (t + 2)
-#temperature = lambda t: a / np.log(t + 2)
+temperature = lambda t: a / np.log(t // neq + 2)
 #temperature = lambda t: a
 
 
@@ -62,7 +65,8 @@ def run_sa(steps, tour):
 
     for step in range(steps):
 
-        new_tour = sa_iteration(tour, graph, temperature(step))
+        #new_tour = sa_iteration(tour, graph, temperature(step), lazy=True)
+        new_tour = sa_iteration(tour, graph, temperature(step), lazy=True, pick_neighbor=pick_neighbor_3opt)
 
         length = path_length(new_tour, graph.weights)
         gain = path_length(tour, graph.weights) - length
@@ -100,13 +104,13 @@ nups = []
 ndowns = []
 lenss = []
 
-nsamples = 10
+nsamples = 1000
 # run a couple of times with random tours
 for i in tqdm.tqdm(range(nsamples)):
     #vs = np.random.permutation(graph.vertices)
     #nvert = len(vs)
     #tour = [frozenset({u, v}) for u, v in zip(vs, vs[1:])] + [frozenset({vs[-1], vs[0]})]
-    graph, tour = generate_random_tour(nvert, rng_seed=i, kind="Unit")
+    graph, tour = generate_random_tour(nvert, rng_seed=0, kind="Unit")
     vs = np.random.permutation(graph.vertices)
     nvert = len(vs)
     tour = [frozenset({u, v}) for u, v in zip(vs, vs[1:])] + [frozenset({vs[-1], vs[0]})]
@@ -157,22 +161,24 @@ td = np.arange(1, len(downhill_mean)+1)
 ts = np.arange(1, len(lenss_mean)+1)
 temps = temperature(ts)
 
-plt.figure()
-plt.plot(ts, lenss_mean, label="Mean tour length")
-plt.plot(ts, nvert * (temps - 1 / (np.exp(1/temps) - 1)), label=r"$\Theta(an/\log(t))$")
-plt.xlabel("t")
-plt.ylabel("Tour length")
-plt.title(f"Samples = {nsamples}")
-plt.legend()
+fig, ax = plt.subplots(1, ncols=2)
+ax[0].plot(ts[100:], lenss_mean[100:], label="Mean tour length")
+#plt.plot(ts, nvert * (temps - 1 / (np.exp(1/temps) - 1)), label=r"$\Theta(an/\log(t))$")
+ax[0].plot(ts[100:], nvert * (temps[100:]), label=r"$\Theta(an/\log(t))$")
+ax[0].set_ylim(0)
+ax[0].set_xlabel("t")
+ax[0].set_ylabel("Tour length")
+ax[0].legend()
 
-plt.figure()
-plt.plot(ts, lenss_var, label="Tour variance")
-#plt.plot(temps, nvert * (a / np.log(ts+2) - 1 / ((ts+2)**(1/a) - 1)), label=r"$\Theta(an/\log(t))$")
-plt.plot(ts, nvert * (temps**2 - 1 / (np.exp(1/temps) - 1) - 1 / (np.exp(1/temps) - 1)**2))
-plt.xlabel("t")
-plt.ylabel("Tour variance")
-plt.title(f"Samples = {nsamples}")
-plt.legend()
+ax[1].plot(ts[100:], lenss_var[100:], label="Tour variance")
+#ax[1].plot(ts[100:], 1*nvert * (temps[100:]**2), label=r"$\Theta(a^2n/\log^2(t))$")
+ax[1].plot(ts[100:], 1*nvert * (temps[100:]**2), label=r"$\Theta(a^2n/\log^2(t))$")
+ax[1].set_ylim(0)
+ax[1].set_xlabel("t")
+ax[1].set_ylabel("Tour variance")
+ax[1].legend()
+
+plt.tight_layout()
 
 plt.show()
 
