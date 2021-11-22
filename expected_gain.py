@@ -26,7 +26,7 @@ np.random.seed(43532)
 local_maxima_encountered = 0
 local_minima_encountered = 0
 
-nvert = 10
+nvert = 50
 #graph, tour = generate_random_tour(nvert, rng_seed=22, kind="Euclidean")
 graph, tour = generate_random_tour(nvert, rng_seed=435, kind="Unit")
 #graph = Graph.from_tspfile("instances/a280.tsp")
@@ -39,7 +39,7 @@ initial_tour = copy.deepcopy(tour)
 lb = 0
 
 # number of steps
-nsteps = 10000
+nsteps = 100
 
 # number of steps to stay at the same temperature
 neq = 1
@@ -92,10 +92,12 @@ def run_sa(steps, tour):
 
         tour = new_tour
 
+        final_weights = [graph.weights[e] for e in tour]
+
         #if is_2_optimal:
         #    break
 
-    return nup, ndown, gain_uphill, gain_downhill, lens
+    return nup, ndown, gain_uphill, gain_downhill, lens, final_weights
 
 
 uphills = []
@@ -103,6 +105,7 @@ downhills = []
 nups = []
 ndowns = []
 lenss = []
+weightss = []
 
 nsamples = 1000
 # run a couple of times with random tours
@@ -116,7 +119,7 @@ for i in tqdm.tqdm(range(nsamples)):
     tour = [frozenset({u, v}) for u, v in zip(vs, vs[1:])] + [frozenset({vs[-1], vs[0]})]
     initial_tour = copy.deepcopy(tour)
 
-    nup, ndown, gain_uphill, gain_downhill, lens = run_sa(nsteps, tour)
+    nup, ndown, gain_uphill, gain_downhill, lens, weights = run_sa(nsteps, tour)
 
     tup = np.arange(1, len(gain_uphill)+1)
     guph = np.array([sum(gain_uphill[:i]) for i in tup])
@@ -132,8 +135,11 @@ for i in tqdm.tqdm(range(nsamples)):
 
     lenss.append(lens)
 
+    weightss.append(weights)
+
 nuphill = min([len(u) for u in uphills])
 uphills = np.array([u[:nuphill] for u in uphills])
+weightss = np.array(weightss)
 
 nups = np.array(nups)
 ndowns = np.array(ndowns)
@@ -155,6 +161,8 @@ lenss_var = np.var(np.array(lenss), axis=0)
 tup = np.arange(1, len(uphill_mean)+1)
 td = np.arange(1, len(downhill_mean)+1)
 
+w = weightss.reshape((1, weightss.size))
+
 #uph_bound = integ.cumtrapz(temperature(tup), x=tup, initial=0)
 
 
@@ -162,23 +170,45 @@ ts = np.arange(1, len(lenss_mean)+1)
 temps = temperature(ts)
 
 fig, ax = plt.subplots(1, ncols=2)
-ax[0].plot(ts[100:], lenss_mean[100:], label="Mean tour length")
+ax[0].plot(ts[10:], lenss_mean[10:], label="Mean tour length")
 #plt.plot(ts, nvert * (temps - 1 / (np.exp(1/temps) - 1)), label=r"$\Theta(an/\log(t))$")
-ax[0].plot(ts[100:], nvert * (temps[100:]), label=r"$\Theta(an/\log(t))$")
+ax[0].plot(ts[10:], nvert * (temps[10:]), label=r"$\Theta(an/\log(t))$")
 ax[0].set_ylim(0)
 ax[0].set_xlabel("t")
 ax[0].set_ylabel("Tour length")
 ax[0].legend()
 
-ax[1].plot(ts[100:], lenss_var[100:], label="Tour variance")
-#ax[1].plot(ts[100:], 1*nvert * (temps[100:]**2), label=r"$\Theta(a^2n/\log^2(t))$")
-ax[1].plot(ts[100:], 1*nvert * (temps[100:]**2), label=r"$\Theta(a^2n/\log^2(t))$")
+ax[1].plot(ts[10:], lenss_var[10:], label="Tour variance")
+#ax[1].plot(ts[10:], 1*nvert * (temps[10:]**2), label=r"$\Theta(a^2n/\log^2(t))$")
+ax[1].plot(ts[10:], 1*nvert * (temps[10:]**2), label=r"$\Theta(a^2n/\log^2(t))$")
 ax[1].set_ylim(0)
 ax[1].set_xlabel("t")
 ax[1].set_ylabel("Tour variance")
 ax[1].legend()
 
 plt.tight_layout()
+
+
+plt.figure()
+js = np.array(lenss)[:, -1]
+
+delta = 0.1
+mu = js.mean()
+jsmall = js[js <= (1-delta)*mu]
+psmall = len(jsmall) / len(js)
+
+print(f"psmall = {psmall:.10f}    chernoff: {math.exp(-delta**2*mu/2):.10f}")
+
+w0 = weightss[:, :35].sum(axis=1)
+w1 = weightss[:, 35:].sum(axis=1)
+
+print(np.mean(w0*w1))
+print(np.mean(w0)*np.mean(w1))
+
+plt.hist(w.T, bins=20)
+#plt.axvline(1.5*nvert*temperature(nsteps), color='k')
+#plt.axvline(js.mean(), color='k', linestyle='dashed', linewidth=1)
+
 
 plt.show()
 
